@@ -1,0 +1,3 @@
+[console_scripts]
+anviz-rt = anviz_sync.rt:main
+anviz-sync = anviz_sync.sync:main
