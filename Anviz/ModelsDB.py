@@ -66,12 +66,60 @@ def attendance_exists(dia: datetime, hora: datetime.time, id_empleado: int) -> b
                             AND attendances.aentry_time = '{hora}'
                             AND attendances.employe_id = {id_empleado}
                             """)
-        if cursor:
+        result = cursor.fetchone()
+        if result:
             return True
         else:
             return False
-    except Exception as e:
-        raise Exception(f'Ocurrio un error {e}')
+    except pymysql.err.OperationalError as e:
+        raise Exception(f'Ocurrió un error {e}')
     finally:
         cursor.close()
 
+
+def attendance_repository(usuario: dict) -> None:
+    """
+    Registra una nueva asistencia en la base de datos.
+
+    :param usuario: Diccionario con los datos a ingresar.
+    :return: None
+    :raises Exception: Se produce una excepción si ocurre algún error durante la inserción.
+    """
+    cursor = conexion().cursor()
+    try:
+        cursor.execute(f"""
+        INSERT INTO attendances (employe_id, workday, aentry_time, adeparture_time) 
+        VALUES('{usuario['employe_id']}', '{usuario['workday']}','{usuario['aentry_time']}','{usuario['adeparture_time']}')
+                        """)
+    except pymysql.err.OperationalError as e:
+        raise Exception(f'Ocurrió un error en la inserción {e}')
+    finally:
+        cursor.close()
+
+def find_attendance_by_day(dia: datetime, id_empleado: int) -> tuple | None:
+    """
+    Busca un registro de asistencia para un empleado en un día específico.
+
+    :param dia: Fecha de trabajo.
+    :param id_empleado: ID del empleado.
+    :return: Una tupla que contiene la información del registro de asistencia correspondiente,
+             o None si no se encuentra ningún registro.
+    :raises Exception: Se produce una excepción si ocurre algún error durante la consulta.
+    """
+    cursor = conexion().cursor()
+    try:
+        cursor.execute(f"""
+                        SELECT * FROM attendances 
+                        WHERE workday = '{dia}'
+                        AND attendances.employe_id = {id_empleado}
+                        AND attendances.adeparture_time IS NOT NULL
+                        ORDER BY workday DESC;
+                        """)
+        if cursor:
+            return cursor.fetchone()
+        else:
+            return None
+    except pymysql.err.OperationalError as e:
+        raise Exception(f'Ocurrió un error en la consulta {e}')
+    finally:
+        cursor.close()
