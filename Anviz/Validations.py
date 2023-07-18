@@ -3,20 +3,24 @@ import ModelsDB as Eloquent
 def update_entrance(request: dict) -> None:
     lastattendance = Eloquent.last_attendance(request['employe_id'], request['workday'])
     attendanceexists = Eloquent.attendance_exists(request['workday'], request['aentry_time'], request['employe_id'])
+    employeexists = Eloquent.employe_exists(request['employe_id'])
     if request['action'] == 128:
-        if attendanceexists:
-            return print('Este usuario ya registro una entrada.')
-        else:
-            if lastattendance:
-                #Aqui va el insert into
-                #Eloquent.attendance_repository(request)
-                ...
-            elif request['adeparture_time'] is not None:
-                #Aqui va el mismo insert into
-                #Eloquent.attendance_repository(request)
-                ...
+        if employeexists:
+            if attendanceexists:
+                return print('Este usuario ya registro una entrada.')
             else:
-                return print('Este usuario ya registró una entrada y no ha generado una salida.')
+                if lastattendance is None:
+                    #Aqui va el insert into
+                    Eloquent.attendance_repository(request)
+                elif request['adeparture_time'] is not None:
+                    #Aqui va el mismo insert into
+                    Eloquent.attendance_repository(request)
+                    return print('Prueba')
+
+                else:
+                    return print('Este usuario ya registró una entrada y no ha generado una salida.')
+        else:
+            return print('Empleado no encontrado')
     elif request['action'] == 129:
         #Siguiente parte de la validación
         #entryDate = request['workday']
@@ -26,7 +30,7 @@ def update_entrance(request: dict) -> None:
         ...
 
 def prueba():
-    aux = Eloquent.find_attendance_by_day('2023-06-15', 12)
+    aux = Eloquent.find_attendance_by_day('2023-07-17', 1)
     if aux:
         print(aux)
     else:

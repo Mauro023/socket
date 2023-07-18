@@ -76,6 +76,27 @@ def attendance_exists(dia: datetime, hora: datetime.time, id_empleado: int) -> b
     finally:
         cursor.close()
 
+def employe_exists(id_empleado: int) -> bool:
+    """
+    Verifica si existe un registro de asistencia para un empleado en una fecha y hora específicas.
+
+    :param id_empleado: ID del empleado.
+    :return: True si existe un registro de asistencia que cumple con los criterios especificados
+             False de lo contrario.
+    """
+    cursor = conexion().cursor()
+    try:
+        cursor.execute(f""" SELECT * FROM employes  WHERE id = {id_empleado} """)
+        result = cursor.fetchone()
+        if result and result[0] > 0:
+            return True
+        else:
+            return False
+    except pymysql.err.OperationalError as e:
+        raise Exception(f'Ocurrió un error {e}')
+    finally:
+        cursor.close()
+
 
 def attendance_repository(usuario: dict) -> None:
     """
@@ -85,16 +106,21 @@ def attendance_repository(usuario: dict) -> None:
     :return: None
     :raises Exception: Se produce una excepción si ocurre algún error durante la inserción.
     """
-    cursor = conexion().cursor()
+    conn = conexion()
     try:
-        cursor.execute(f"""
-        INSERT INTO attendances (employe_id, workday, aentry_time, adeparture_time) 
-        VALUES('{usuario['employe_id']}', '{usuario['workday']}','{usuario['aentry_time']}','{usuario['adeparture_time']}')
-                        """)
+        with conn.cursor() as cursor:
+            sql = """
+            INSERT INTO attendances (workday, aentry_time, adeparture_time, employe_id) 
+            VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(sql, (usuario['workday'], usuario['aentry_time'], usuario['adeparture_time'], usuario['employe_id']))
+        conn.commit()
+        print('Entrada registrada')
     except pymysql.err.OperationalError as e:
         raise Exception(f'Ocurrió un error en la inserción {e}')
     finally:
-        cursor.close()
+        conn.close()
+
 
 def find_attendance_by_day(dia: datetime, id_empleado: int) -> tuple | None:
     """
@@ -123,3 +149,13 @@ def find_attendance_by_day(dia: datetime, id_empleado: int) -> tuple | None:
         raise Exception(f'Ocurrió un error en la consulta {e}')
     finally:
         cursor.close()
+
+
+def prueba():
+    aux = last_attendance(1, '2023-07-18')
+    if aux:
+        print(aux)
+
+if __name__ == '__main__':
+    prueba()
+

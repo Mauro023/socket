@@ -14,12 +14,12 @@
 
 import socket
 import struct
-import requests
 import json
 import itertools
 import time
 from datetime import datetime, timedelta
 from collections import namedtuple
+from Validations import *
 
 __version__ = '0.1'
 
@@ -340,7 +340,7 @@ class Device(object):
 
 def main():
     device_id = 1
-    ip_addr = '10.1.4.182'
+    ip_addr = '10.1.11.225'
     ip_port = 5010
 
     clock = Device(device_id, ip_addr, ip_port)
@@ -350,8 +350,8 @@ def main():
     contador = 0
 
     # Definir la fecha y hora inicial y final
-    fecha_hora_inicio = datetime.combine(today, datetime.strptime('12:00:00', '%H:%M:%S').time())
-    fecha_hora_fin = datetime.combine(today, datetime.strptime('22:00:00', '%H:%M:%S').time())
+    fecha_hora_inicio = datetime.combine(today, datetime.strptime('07:30:00', '%H:%M:%S').time())
+    fecha_hora_fin = datetime.combine(today, datetime.strptime('08:30:00', '%H:%M:%S').time())
 
     # Definir el incremento de tiempo
     incremento = timedelta(minutes=60)
@@ -364,14 +364,14 @@ def main():
             contador += 1
             hora = record.datetime.time()
             fecha = record.datetime.date()
-            print(
-                "[",
-                "IDU:", record.code,
-                "Date:", fecha,
-                "Time:", hora,
-                "Action:", record.type,
-                "]"
-            )
+            #print(
+            #   "[",
+            #    "IDU:", record.code,
+            #    "Date:", fecha,
+            #    "Time:", hora,
+            #    "Action:", record.type,
+            #   "]"
+            #)
             if fecha == today and fecha_hora_inicio.time() <= hora <= (fecha_hora_inicio + incremento).time():
                 # Crear el objeto de datos para enviar
                 data = {
@@ -382,15 +382,9 @@ def main():
                     "action": record.type,
                 }
 
-                # Configurar la URL de la API Laravel
-                url = "http://127.0.0.1:8000/api/updateEntrance/"
-
-                print(data)
-
-                # Enviar la solicitud POST a la API de Laravel
-                requests.post(url, json=data)
-
-                print('REGISTRO EXITOSO')
+                if record.type == 128:
+                    print(data)
+                    update_entrance(data)
 
         # Aumentar la fecha y hora de inicio para la siguiente iteración
         fecha_hora_inicio += incremento
