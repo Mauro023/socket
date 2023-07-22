@@ -1,5 +1,5 @@
 import pymysql
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def conexion() -> pymysql.connect | None:
@@ -20,7 +20,8 @@ def conexion() -> pymysql.connect | None:
         print(f'Ocurrió un error mientras de conectaba a la base de datos {error}')
         return None
 
-def last_attendance(id_empleado: int, dia: datetime) -> any:
+
+def last_attendance(id_empleado: int, dia: datetime, entry_time: datetime.time) -> any:
     """
     Función encargada de extraer el registro de la última entrada
     para un usuario en específico.
@@ -37,7 +38,10 @@ def last_attendance(id_empleado: int, dia: datetime) -> any:
                     SELECT * FROM attendances
                     WHERE attendances.employe_id = {id_empleado}
                     AND attendances.workday = '{dia}'
-                    ORDER BY employe_id DESC;
+                    AND attendances.aentry_time < '{entry_time}'
+                    AND attendances.adeparture_time IS Null
+                    ORDER BY attendances.id DESC
+                    LIMIT 1;
                         """)
         if cursor:
             return cursor.fetchone()
@@ -47,6 +51,7 @@ def last_attendance(id_empleado: int, dia: datetime) -> any:
         raise Exception(f'Ocurrió un error {e}')
     finally:
         cursor.close()
+
 
 def attendance_exists(dia: datetime, hora: datetime.time, id_empleado: int) -> bool:
     """
@@ -75,6 +80,7 @@ def attendance_exists(dia: datetime, hora: datetime.time, id_empleado: int) -> b
         raise Exception(f'Ocurrió un error {e}')
     finally:
         cursor.close()
+
 
 def employe_exists(id_empleado: int) -> bool:
     """
@@ -113,7 +119,8 @@ def attendance_repository(usuario: dict) -> None:
             INSERT INTO attendances (workday, aentry_time, adeparture_time, employe_id) 
             VALUES (%s, %s, %s, %s)
             """
-            cursor.execute(sql, (usuario['workday'], usuario['aentry_time'], usuario['adeparture_time'], usuario['employe_id']))
+            cursor.execute(sql, (usuario['workday'], usuario['aentry_time'],
+                                 usuario['adeparture_time'], usuario['employe_id']))
         conn.commit()
         print('Entrada registrada')
     except pymysql.err.OperationalError as e:
@@ -138,7 +145,7 @@ def find_attendance_by_day(dia: datetime, id_empleado: int) -> tuple | None:
                         SELECT * FROM attendances 
                         WHERE workday = '{dia}'
                         AND attendances.employe_id = {id_empleado}
-                        AND attendances.adeparture_time IS NOT NULL
+                        AND attendances.adeparture_time IS NULL
                         ORDER BY workday DESC;
                         """)
         if cursor:
@@ -151,11 +158,52 @@ def find_attendance_by_day(dia: datetime, id_empleado: int) -> tuple | None:
         cursor.close()
 
 
-def prueba():
-    aux = last_attendance(1, '2023-07-18')
-    if aux:
-        print(aux)
+def find_attendance_by_previous_day(employe_id, entry_date, entry_time) -> tuple | None:
+    """
+    Busca un registro de asistencia para un empleado en el día anterior, y si no existe una entrada para ese día o si
+    existe una entrada, pero la hora de entrada es mayor que la hora actual, devuelve el registro que cumpla con esas
+    condiciones.
 
-if __name__ == '__main__':
-    prueba()
+    :param employe_id: ID del empleado.
+    :param entry_date: Fecha de trabajo en formato 'YYYY-MM-DD'.
+    :param entry_time: Hora de entrada en formato 'HH:mm:ss'.
+    :return: Una tupla que contiene la información del registro de asistencia correspondiente,
+             o None si no se encuentra ningún registro.
+    """
+    conn = conexion()
+    try:
+        with conn.cursor() as cursor:
+            previous_day = (datetime.strptime(entry_date, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
+            sql = """
+    
+            SELECT * FROM attendances a
+                JOIN employes e ON a.employe_id = e.id 
+                WHERE e.id = %s
+                AND a.workday = %s
+                AND a.adeparture_time IS NULL
+                AND e.unit = 'Asistencial'
+                ORDER BY a.workday DESC
+                LIMIT 1
+            """
+
+            cursor.execute(sql, (employe_id, previous_day))
+            result = cursor.fetchone()
+            return result
+    except pymysql.err.OperationalError as e:
+        raise Exception(f'Ocurrió un error en la consulta {e}')
+    finally:
+        conn.close()
+
+
+def update_attendance_by_day(record: list) -> None:
+    conn = conexion()
+    try:
+        with conn.cursor() as cursor:
+            query = f"UPDATE attendances SET adeparture_time = '{record[3]}' WHERE id = '{record[0]}'"
+            cursor.execute(query)
+            conn.commit()
+    except pymysql.err.OperationalError as e:
+        raise Exception(f'Revise lo datos a ingresar error {e}')
+    finally:
+        conn.close()
 
