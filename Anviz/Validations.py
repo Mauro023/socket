@@ -1,4 +1,4 @@
-import ModelsDB as Eloquent
+import ModelsPyodbc as Eloquent
 
 
 def update_entrance(request: dict) -> None:
@@ -43,16 +43,15 @@ def update_output(request: dict) -> None:
 
 def prueba():
     data = {
-        "workday": '2023-07-22',
+        "workday": '2023-07-24',
         "aentry_time": '17:00:00',
         "adeparture_time": None,
-        "employe_id": 1,
+        "employe_id": 38,
         "action": 128,
     }
     #update_entrance(data)
     #update_output(data)
-    print(Eloquent.last_attendance(data['employe_id'], data['workday'], data['aentry_time']))
-
+    print(Eloquent.find_attendance_by_day('12:00:00', 38))
 
 if __name__ == '__main__':
     #print(Eloquent.attendance_exists('2023-05-11', '08:04:00',4))

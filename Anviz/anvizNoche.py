@@ -350,8 +350,8 @@ def main():
     contador = 0
 
     # Definir la fecha y hora inicial y final
-    fecha_hora_inicio = datetime.combine(today, datetime.strptime('04:30:00', '%H:%M:%S').time())
-    fecha_hora_fin = datetime.combine(today, datetime.strptime('08:30:00', '%H:%M:%S').time())
+    fecha_hora_inicio = datetime.combine(today, datetime.strptime('14:00:00', '%H:%M:%S').time())
+    fecha_hora_fin = datetime.combine(today, datetime.strptime('18:00:00', '%H:%M:%S').time())
 
     # Definir el incremento de tiempo
     incremento = timedelta(minutes=60)
