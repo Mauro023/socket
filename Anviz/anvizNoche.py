@@ -346,12 +346,12 @@ def main():
     clock = Device(device_id, ip_addr, ip_port)
 
     today = datetime.today().date()
-    fecha_deseada = datetime.strptime("2023-05-22", "%Y-%m-%d").date()
+    fecha_deseada = datetime.strptime("2023-07-23", "%Y-%m-%d").date()
     contador = 0
 
     # Definir la fecha y hora inicial y final
-    fecha_hora_inicio = datetime.combine(today, datetime.strptime('05:00:00', '%H:%M:%S').time())
-    fecha_hora_fin = datetime.combine(today, datetime.strptime('10:00:00', '%H:%M:%S').time())
+    fecha_hora_inicio = datetime.combine(today, datetime.strptime('04:30:00', '%H:%M:%S').time())
+    fecha_hora_fin = datetime.combine(today, datetime.strptime('08:30:00', '%H:%M:%S').time())
 
     # Definir el incremento de tiempo
     incremento = timedelta(minutes=60)

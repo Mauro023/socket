@@ -2,7 +2,7 @@ import ModelsDB as Eloquent
 
 
 def update_entrance(request: dict) -> None:
-    lastattendance = Eloquent.last_attendance(request['employe_id'], request['workday'])
+    lastattendance = Eloquent.last_attendance(request['employe_id'], request['workday'], request['aentry_time'])
     attendanceexists = Eloquent.attendance_exists(request['workday'], request['aentry_time'], request['employe_id'])
     employe_exists = Eloquent.employe_exists(request['employe_id'])
     if employe_exists:
