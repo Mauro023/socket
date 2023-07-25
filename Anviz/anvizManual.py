@@ -346,15 +346,23 @@ def main():
     clock = Device(device_id, ip_addr, ip_port)
 
     today = datetime.today().date()
-    fecha_deseada = datetime.strptime("2023-07-24", "%Y-%m-%d").date()
+    fecha_str = input("Ingrese una fecha en formato YYYY-MM-DD o deje en blanco para la fecha actual: ")
+    if fecha_str == '':
+        fecha_str = today
+        print(fecha_str)
+
+    fecha_deseada = datetime.strptime(f'{fecha_str}', "%Y-%m-%d").date()
     contador = 0
 
     # Definir la fecha y hora inicial y final
-    fecha_hora_inicio = datetime.combine(today, datetime.strptime('12:30:00', '%H:%M:%S').time())
-    fecha_hora_fin = datetime.combine(today, datetime.strptime('14:30:00', '%H:%M:%S').time())
+    start_time = input("Ingrese la hora de inicio (HH:MM:SS): ")
+    end_time = input("Ingrese la hora de finalización (HH:MM:SS): ")
+    fecha_hora_inicio = datetime.combine(today, datetime.strptime(start_time, '%H:%M:%S').time())
+    fecha_hora_fin = datetime.combine(today, datetime.strptime(end_time, '%H:%M:%S').time())
 
     # Definir el incremento de tiempo
-    incremento = timedelta(minutes=60)
+    minut = input("Defina el incremento del tiempo (Minutos (10 - 60)): ")
+    incremento = timedelta(minutes=int(minut))
 
     # Iterar hasta la hora de finalización
     while fecha_hora_inicio < fecha_hora_fin:
@@ -372,7 +380,7 @@ def main():
             #    "Action:", record.type,
             #   "]"
             #)
-            if fecha == today and fecha_hora_inicio.time() <= hora <= (fecha_hora_inicio + incremento).time():
+            if fecha == fecha_deseada and fecha_hora_inicio.time() <= hora <= (fecha_hora_inicio + incremento).time():
                 # Crear el objeto de datos para enviar
                 data = {
                     "workday": str(fecha),
