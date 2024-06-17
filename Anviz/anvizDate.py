@@ -275,13 +275,27 @@ class Device(object):
         return NetParams(ip, netmask, mac, gw, server, far, com, mode, dhcp)
 
     def get_record_info(self):
-        it = iter(self._get_response(CMD_GET_RECORD_INFO))
-        users = sum(struct.unpack(">BH", b_take(it, 3)))
-        fp = sum(struct.unpack(">BH", b_take(it, 3)))
-        passwd = sum(struct.unpack(">BH", b_take(it, 3)))
-        card = sum(struct.unpack(">BH", b_take(it, 3)))
-        all_records = sum(struct.unpack(">BH", b_take(it, 3)))
-        new_records = sum(struct.unpack(">BH", b_take(it, 3)))
+        response = self._get_response(CMD_GET_RECORD_INFO)
+        print(f"Raw response: {response.hex()}")  # Depuración: imprimir respuesta cruda en formato hexadecimal
+
+        it = iter(response)
+
+        def parse_field(description):
+            field_bytes = b_take(it, 3)
+            high, low = struct.unpack(">BH", field_bytes)
+            field_value = (high << 16) + low  # Ajustar si es necesario
+            print(f"{description}: bytes={field_bytes.hex()}, high={high}, low={low}, value={field_value}")
+            return field_value
+
+        users = parse_field("Users")
+        fp = parse_field("FP")
+        passwd = parse_field("Passwords")
+        card = parse_field("Cards")
+        all_records = parse_field("All Records")
+        new_records = parse_field("New Records")
+
+        print(f"Parsed - Users: {users}, FP: {fp}, Passwords: {passwd}, Cards: {card}, All Records: {all_records}, New Records: {new_records}")  # Depuración: imprimir valores interpretados
+
         return RecordsInfo(users, fp, passwd, card, all_records, new_records)
 
     def download_records(self, new=False):
@@ -345,61 +359,46 @@ def main():
 
     clock = Device(device_id, ip_addr, ip_port)
 
-    today = datetime.today().date()
-    fecha_deseada = datetime.strptime("2023-07-24", "%Y-%m-%d").date()
+    fecha_str = input("Ingrese la fecha inicial en formato YYYY-MM-DD: ")
+    fecha_end = input("Ingrese la fecha final en formato YYYY-MM-DD: ")
+
+    fecha_deseada = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+    fecha_final = datetime.strptime(fecha_end, "%Y-%m-%d").date()
     contador = 0
 
-    # Definir la fecha y hora inicial y final
-    fecha_hora_inicio = datetime.combine(today, datetime.strptime('17:00:00', '%H:%M:%S').time())
-    fecha_hora_fin = datetime.combine(today, datetime.strptime('21:00:00', '%H:%M:%S').time())
+    incremento = timedelta(days=1)
 
-    # Definir el incremento de tiempo
-    incremento = timedelta(minutes=60)
-
-    # Iterar hasta la hora de finalización
-    while fecha_hora_inicio < fecha_hora_fin:
-        record_generator = clock.download_all_records()
-        # Iterar a través del generador usando un bucle for
-        for record in record_generator:
+    # Iterar hasta la fecha de finalización
+    record_generator = clock.download_all_records()
+    for record in record_generator:
+        print(f"Procesando la fecha: {record.datetime.date()}")
+        if fecha_deseada <= record.datetime.date() <= fecha_final:
             contador += 1
             hora = record.datetime.time()
             fecha = record.datetime.date()
-            #print(
-            #   "[",
-            #    "IDU:", record.code,
-            #    "Date:", fecha,
-            #    "Time:", hora,
-            #    "Action:", record.type,
-            #   "]"
-            #)
-            if fecha == today and fecha_hora_inicio.time() <= hora <= (fecha_hora_inicio + incremento).time():
-                # Crear el objeto de datos para enviar
-                data = {
-                    "workday": str(fecha),
-                    "aentry_time": str(hora),
-                    "adeparture_time": None,
-                    "employe_id": record.code,
-                    "action": record.type,
-                }
 
-                print(data)
-                if record.type == 128:
-                    update_entrance(data)
-                elif record.type == 129:
-                    update_output(data)
+            # Crear el objeto de datos para enviar
+            data = {
+                "workday": str(fecha),
+                "aentry_time": str(hora),
+                "adeparture_time": None,
+                "employe_id": record.code,
+                "action": record.type,
+            }
 
-        # Aumentar la fecha y hora de inicio para la siguiente iteración
-        fecha_hora_inicio += incremento
-        print(fecha_hora_inicio.strftime("%H:%M"))
-
-        # Esperar 5 segundos antes de la siguiente iteración
-        time.sleep(5)
+            print(data)
+            if record.type == 128:
+                update_entrance(data)
+            elif record.type == 129:
+                update_output(data)
 
     if contador == 0:
-        print(f"No se encontraron registros para la fecha {fecha_deseada}")
+        print(f"No se encontraron registros entre las fechas {fecha_str} y {fecha_end}")
+    else:
+        print(f"Se encontraron {contador} registros entre las fechas {fecha_str} y {fecha_end}")
+        # Esperar 5 segundos antes de la siguiente iteración
+    time.sleep(5)
 
-    if contador > 0:
-        print(f"Se encontraron registros para la fecha {fecha_deseada}")
 
 
 if __name__ == '__main__':

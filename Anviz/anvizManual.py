@@ -372,14 +372,14 @@ def main():
             contador += 1
             hora = record.datetime.time()
             fecha = record.datetime.date()
-            #print(
-            #   "[",
-            #    "IDU:", record.code,
-            #    "Date:", fecha,
-            #    "Time:", hora,
-            #    "Action:", record.type,
-            #   "]"
-            #)
+            print(
+               "[",
+
+                "Date:", fecha,
+                "Time:", hora,
+                "Action:", record.type,
+               "]"
+            )
             if fecha == fecha_deseada and fecha_hora_inicio.time() <= hora <= (fecha_hora_inicio + incremento).time():
                 # Crear el objeto de datos para enviar
                 data = {

@@ -330,7 +330,7 @@ class Device(object):
 
 def main():
     device_id=1 
-    ip_addr='10.1.4.182' 
+    ip_addr='10.1.11.225'
     ip_port=5010
     
     clock = Device(device_id, ip_addr, ip_port)

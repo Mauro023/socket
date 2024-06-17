@@ -12,7 +12,7 @@ def conexion() -> pyodbc.Connection | None:
     try:
         conn = pyodbc.connect(
             'DRIVER={SQL Server};'
-            'SERVER=localhost;'
+            'SERVER=10.1.11.239;'
             'DATABASE=cumisystem;'
             'UID=sa;'
             'PWD=Sistemas2023;'
